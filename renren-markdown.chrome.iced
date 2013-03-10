@@ -4,7 +4,7 @@
 // ==UserScript==
 // @name          renren-markdown
 // @namespace     http://github.com/smilekzs
-// @version       0.4.34
+// @version       0.4.32
 // @description   write well-formatted blogs on renren.com with markdown
 // @include       *blog.renren.com/blog/*Blog*
 // @include       *blog.renren.com/blog/*edit*
@@ -19,7 +19,7 @@
 # trigger => delay => callback
 # more triggers before callback => only last trigger is kept
 # callback returns non-null => retry after original delay
-W=unsafeWindow;
+W=window
 class DelayTrigger
   constructor: (cb)->
     @cb=cb
@@ -30,8 +30,6 @@ class DelayTrigger
 
 
 # module inlinify {
-
-arrayize=(a)->[].slice.call(a)
 
 # adapted from: http://stackoverflow.com/questions/298750/how-do-i-select-text-nodes-with-jquery
 getTextNodesIn=(node)->
@@ -50,7 +48,7 @@ getTextNodesIn=(node)->
 getCssRules=(css)->
   doc=JQ('<iframe />').css('display', 'none').appendTo('body')[0].contentDocument
   JQ(doc).find('head').append("<style>#{css}</style>")
-  arrayize doc.styleSheets[0].cssRules
+  doc.styleSheets[0].cssRules
 
 # escape cssText to avoid single-double-quote hell
 escapeCssText=(cssText)->
@@ -71,6 +69,7 @@ cmpSpec=(a, b)->
     if (c=cmp(a[i], b[i])) then return c
   return 0
 
+arrayize=(a)->[].slice.call(a)
 inlineCss=(root, rules)->
   arrayize(rules).forEach (r)->
     sel=r.selectorText
@@ -92,7 +91,7 @@ inlineCss=(root, rules)->
         # dirty workaround: firefox `padding-right-value` problem
         if k.match(/-value$/) && k!='drop-initial-value'
           k=k[0...(k.lastIndexOf('-'))]
-        el.style.setProperty(k, p.value, '')
+        el.style.setProperty(k, p.value, 'important')
       delete el.stylePlus
       null
   root
@@ -101,13 +100,13 @@ inlineCss=(root, rules)->
 spanifyAll=(el)->
   jel=JQ(el)
 
-  # clone `el` into raw span element
+  # clone `el` with raw span element
   # also prevent elements with no text from being stripped
-  spanify=(el, cssText='')->
+  spanify=(el)->
     if !el? then return JQ('<span />')
-    s=escapeCssText el.style.cssText
+    style=escapeCssText el.style.cssText
     cont=el.innerHTML.trim() || '<span style="display: none;">&nbsp;</span>'
-    JQ("""<span style="#{s};#{cssText}">#{cont}</span>""")
+    JQ("""<span style="#{style}">#{cont}</span>""")
 
   # preformatted text: replace with `&amp;` and friends
   jel.find('pre').each ->
@@ -116,7 +115,6 @@ spanifyAll=(el)->
         .replace(/\&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
-        .replace(/\t/g, '        ') # FIXME: tab stop hardcoded to 8
         .replace(/\ /g, '&nbsp;')
         .replace(/[\n\r\v]/g, '<br/>')
       JQ(text).replaceWith("<span>#{str}</span>")
@@ -141,8 +139,8 @@ spanifyAll=(el)->
     ['tr', 'table-row']
     ['table', 'table']
   ].forEach (arg)->
-    ((sel, disp)->
-      while x=jel.find(sel)[0]
+    ((tag, disp)->
+      while x=jel.find(tag)[0]
         s=spanify(x)
         s[0].style.display||=disp
         JQ(x).replaceWith(s)
@@ -161,43 +159,43 @@ spanifyAll=(el)->
 
 
 # } //module inlinify
+messagedata=""
+receiveMessage=(event)->
+  console.log("received data")
+  messagedata=event.data
 
+checkMessageReady=(cb)->
+  mid=setInterval (->
+    if messagedata isnt ""
+      clearInterval(mid)
+      cb()
+  ) ,1000
 
 # module getGist {
 
-safeParse=(s)->
-  JSON.parse '\"'+s.replace(/\\'/g, '\'').replace(/\t/g, '\\t')+'\"'
-
 getGist=(id, cb)->
   gistJsRes=null
-  await GM_xmlhttpRequest {
-    url: "https://gist.github.com/#{id}.js"
-    method: 'GET'
-    onload: defer(gistJsRes)
-    onerror: (err)->cb err; throw err
-  }
-  gistJs=gistJsRes.responseText
-
+  W.frames[0].postMessage("https://gist.github.com/#{id}.js","*")
+  await checkMessageReady defer()
+  gistJs=messagedata
+  messagedata=""
   cssUrl=gistJs.match(/link href=\\"([^"]*)\\"/)?[1]
   if !cssUrl
     err=Error("can't find gist css")
     cb err; throw err
 
   gistCssRes=null
-  await GM_xmlhttpRequest {
-    url: cssUrl
-    method: 'GET'
-    onload: defer(gistCssRes)
-    onerror: (err)->cb err; throw err
-  }
-  gistCss=gistCssRes.responseText
+  W.frames[0].postMessage(cssUrl,"*")
+  await checkMessageReady defer()
+  gistCss=messagedata
+  messagedata=""
 
   i1=gistJs.indexOf("\n")
   i1=gistJs.indexOf("('", i1)+2
   i2=gistJs.lastIndexOf("')")
 
   if i1>0 && i2>0
-    gistHtml=safeParse(gistJs.substring(i1, i2))
+    gistHtml=JSON.parse('\"'+gistJs.substring(i1, i2).replace(/\\'/g, '\'')+'\"')
   else
     err=Error("can't find gist content")
     cb err; throw err
@@ -223,6 +221,7 @@ unembed=(h)->
   if !b64? then b64=''
   try return b64_to_str(b64)
   catch e then return ''
+
 
 W.rrmd=rrmd=
   lib:
@@ -274,6 +273,7 @@ W.rrmd=rrmd=
       JQ('#title_bg')[0]?.style.cssText='position: inherit !important; width: 100%'
       JQ('#title')[0]?.style.cssText='width: 98%'
       JQ('#editor_ifr')[0]?.contentDocument.body.style.paddingTop="0px"
+      
 
     setStatus: (type, text, progress)->
       console.log(progress + ':' + text)
@@ -384,5 +384,7 @@ await checkPageReady defer()
 # await W.MathJax.Hub.Queue [defer()]
 
 rrmd.init()
-
+rrmd.JQ=JQ # for debugger access
+messagedata=""
+W.frames[1].addEventListener("message", receiveMessage, false);
 # } //module rrmd
