@@ -10,5 +10,5 @@
    "name": "人人markdown",
    "version": "0.4.31",
    "permissions": ["https://*.github.com/","http://*.github.com/"],
-   "web_accessible_resources": ["js/renren-markdown.chrome.js""]
+   "web_accessible_resources": ["js/renren-markdown.chrome.js"]
 }
