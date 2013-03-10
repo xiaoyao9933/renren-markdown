@@ -279,7 +279,6 @@ JQ.noConflict();
   checkMessageReady = function(cb) {
     var mid;
     return mid = setInterval((function() {
-      console.log(messagedata);
       if (messagedata !== "") {
         clearInterval(mid);
         return cb();
@@ -301,14 +300,13 @@ JQ.noConflict();
         funcname: "getGist"
       });
       checkMessageReady(__iced_deferrals.defer({
-        lineno: 179
+        lineno: 178
       }));
       __iced_deferrals._fulfill();
     })(function() {
       var _ref;
       gistJs = messagedata;
       messagedata = "";
-      console.log("jumped");
       cssUrl = (_ref = gistJs.match(/link href=\\"([^"]*)\\"/)) != null ? _ref[1] : void 0;
       if (!cssUrl) {
         err = Error("can't find gist css");
@@ -324,7 +322,7 @@ JQ.noConflict();
           funcname: "getGist"
         });
         checkMessageReady(__iced_deferrals.defer({
-          lineno: 190
+          lineno: 188
         }));
         __iced_deferrals._fulfill();
       })(function() {
@@ -438,7 +436,7 @@ JQ.noConflict();
                   _this.statusPb.stop(true).css('opacity', '1').show().animate({
                     width: p
                   }, 500, 'linear', __iced_deferrals.defer({
-                    lineno: 291
+                    lineno: 289
                   }));
                   __iced_deferrals._fulfill();
                 })(function() {
@@ -449,7 +447,7 @@ JQ.noConflict();
                       funcname: "setStatus"
                     });
                     _this.statusPb.fadeOut(1500, 'swing', __iced_deferrals.defer({
-                      lineno: 292
+                      lineno: 290
                     }));
                     __iced_deferrals._fulfill();
                   })(function() {
@@ -501,7 +499,7 @@ JQ.noConflict();
                 return gistHtml = arguments[2];
               };
             })(),
-            lineno: 309
+            lineno: 307
           }));
           __iced_deferrals._fulfill();
         })(function() {
@@ -580,7 +578,7 @@ JQ.noConflict();
                         return gist = arguments[1];
                       };
                     })(),
-                    lineno: 338
+                    lineno: 336
                   }));
                   __iced_deferrals._fulfill();
                 })(function() {
@@ -636,7 +634,7 @@ JQ.noConflict();
               return html = arguments[1];
             };
           })(),
-          lineno: 362
+          lineno: 360
         }));
         __iced_deferrals._fulfill();
       })(function() {
@@ -669,7 +667,7 @@ JQ.noConflict();
       filename: "renren-markdown.chrome.iced"
     });
     checkPageReady(__iced_deferrals.defer({
-      lineno: 384
+      lineno: 382
     }));
     __iced_deferrals._fulfill();
   })(function() {

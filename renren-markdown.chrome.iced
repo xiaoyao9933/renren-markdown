@@ -166,7 +166,6 @@ receiveMessage=(event)->
 
 checkMessageReady=(cb)->
   mid=setInterval (->
-    console.log(messagedata)
     if messagedata isnt ""
       clearInterval(mid)
       cb()
@@ -180,7 +179,6 @@ getGist=(id, cb)->
   await checkMessageReady defer()
   gistJs=messagedata
   messagedata=""
-  console.log("jumped")
   cssUrl=gistJs.match(/link href=\\"([^"]*)\\"/)?[1]
   if !cssUrl
     err=Error("can't find gist css")
