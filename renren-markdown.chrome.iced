@@ -19,7 +19,7 @@
 # trigger => delay => callback
 # more triggers before callback => only last trigger is kept
 # callback returns non-null => retry after original delay
-W=unsafeWindow;
+W=window
 class DelayTrigger
   constructor: (cb)->
     @cb=cb
@@ -159,33 +159,38 @@ spanifyAll=(el)->
 
 
 # } //module inlinify
+messagedata=""
+receiveMessage=(event)->
+  console.log("received data")
+  messagedata=event.data
 
+checkMessageReady=(cb)->
+  mid=setInterval (->
+    console.log(messagedata)
+    if messagedata isnt ""
+      clearInterval(mid)
+      cb()
+  ) ,1000
 
 # module getGist {
 
 getGist=(id, cb)->
   gistJsRes=null
-  await GM_xmlhttpRequest {
-    url: "https://gist.github.com/#{id}.js"
-    method: 'GET'
-    onload: defer(gistJsRes)
-    onerror: (err)->cb err; throw err
-  }
-  gistJs=gistJsRes.responseText
-
+  W.frames[0].postMessage("https://gist.github.com/#{id}.js","*")
+  await checkMessageReady defer()
+  gistJs=messagedata
+  messagedata=""
+  console.log("jumped")
   cssUrl=gistJs.match(/link href=\\"([^"]*)\\"/)?[1]
   if !cssUrl
     err=Error("can't find gist css")
     cb err; throw err
 
   gistCssRes=null
-  await GM_xmlhttpRequest {
-    url: cssUrl
-    method: 'GET'
-    onload: defer(gistCssRes)
-    onerror: (err)->cb err; throw err
-  }
-  gistCss=gistCssRes.responseText
+  W.frames[0].postMessage(cssUrl,"*")
+  await checkMessageReady defer()
+  gistCss=messagedata
+  messagedata=""
 
   i1=gistJs.indexOf("\n")
   i1=gistJs.indexOf("('", i1)+2
@@ -270,6 +275,7 @@ W.rrmd=rrmd=
       JQ('#title_bg')[0]?.style.cssText='position: inherit !important; width: 100%'
       JQ('#title')[0]?.style.cssText='width: 98%'
       JQ('#editor_ifr')[0]?.contentDocument.body.style.paddingTop="0px"
+      
 
     setStatus: (type, text, progress)->
       console.log(progress + ':' + text)
@@ -381,5 +387,6 @@ await checkPageReady defer()
 
 rrmd.init()
 rrmd.JQ=JQ # for debugger access
-
+messagedata=""
+W.frames[1].addEventListener("message", receiveMessage, false);
 # } //module rrmd
