@@ -4,8 +4,13 @@
       "matches": ["http://blog.renren.com/blog/*Blog*", "http://blog.renren.com/blog/*edit*", "http://blog.renren.com/*Entry*"],
       "run_at": "document_end"
    } ],
-   "description": "人人markdown",
-
+   "description": "人人markdown,是一款让你的人人日志进行markdown实时编辑的小插件，享受书写的快感吧～",
+   "icons": {
+      "128": "img/icon.png",
+      "16": "img/icon.png",
+      "32": "img/icon.png",
+      "48": "img/icon.png"
+   },
    "manifest_version": 2,
    "name": "人人markdown",
    "version": "0.4.31",
